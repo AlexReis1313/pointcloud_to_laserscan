@@ -71,7 +71,7 @@ def generate_launch_description():
                 'inf_epsilon': 1.0,
                 'min_height_shortrange': -0.2,
                 'max_height_shortrange': 6.0,
-                'range_transition': 18.0
+                'range_transition': 20.0
             }],
             name='pointcloud_to_laserscan_merged'
         )
