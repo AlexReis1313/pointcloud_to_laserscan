@@ -55,9 +55,10 @@ def generate_launch_description():
             remappings=[('cloud_in', 'ouster/points_corrected'),
                         ('scan', [LaunchConfiguration(variable_name='scanner'), '/scan/merged'])],
             parameters=[{
-                'target_frame': 'cloud',
+                'target_frame': 'laser_scan_frame',
+                'fixed_frame': 'map',
+                'cloud_frame': 'os_sensor',             
                 'transform_tolerance': 0.01,
-                
                 'min_height_longrange': -8.0,
                 'max_height_longrange': 8.0,
                 'angle_min': -3.14159,  # -M_PI/2
@@ -68,7 +69,7 @@ def generate_launch_description():
                 'range_max': 5000.0,
                 'use_inf': True,
                 'inf_epsilon': 1.0,
-                'min_height_shortrange': -0.35,
+                'min_height_shortrange': -0.2,
                 'max_height_shortrange': 6.0,
                 'range_transition': 18.0
             }],

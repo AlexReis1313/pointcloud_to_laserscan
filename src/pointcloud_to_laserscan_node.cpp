@@ -64,6 +64,8 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
 : rclcpp::Node("pointcloud_to_laserscan", options)
 {
   target_frame_ = this->declare_parameter("target_frame", "");
+  fixed_frame_ =this->declare_parameter("fixed_frame", "");
+  cloud_frame_=this->declare_parameter("cloud_frame", "");
   tolerance_ = this->declare_parameter("transform_tolerance", 0.01);
   // TODO(hidmic): adjust default input queue size based on actual concurrency levels
   // achievable by the associated executor
@@ -97,7 +99,7 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
     tf2_->setCreateTimerInterface(timer_interface);
     tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_);
     message_filter_ = std::make_unique<MessageFilter>(
-      sub_, *tf2_, "os_sensor", input_queue_size_,
+      sub_, *tf2_, cloud_frame_, input_queue_size_,
       this->get_node_logging_interface(),
       this->get_node_clock_interface());
     message_filter_->registerCallback(
@@ -164,7 +166,7 @@ void PointCloudToLaserScanNode::cloudCallback(
     geometry_msgs::msg::TransformStamped transform_stamped, noattitude_transform;
 
 
-    transform_stamped = tf2_->lookupTransform("map", "os_sensor", tf2::TimePointZero);
+    transform_stamped = tf2_->lookupTransform(fixed_frame_, cloud_msg->header.frame_id, tf2::TimePointZero);
     // adavanced version transform_stamped = tf2_->lookupTransform(fixed_frame_, cloud_msg->header.frame_id, tf2::TimePointZero);
     tf2::Quaternion q_orig, q_new;
     tf2::convert(transform_stamped.transform.rotation, q_orig);
@@ -175,8 +177,8 @@ void PointCloudToLaserScanNode::cloudCallback(
     q_new.setRPY(0, 0, yaw);
 
     noattitude_transform.header.stamp = cloud_msg->header.stamp;
-    noattitude_transform.header.frame_id = "map"; //fixed_frame_
-    noattitude_transform.child_frame_id = "cloud"; //target_frame_
+    noattitude_transform.header.frame_id = fixed_frame_;
+    noattitude_transform.child_frame_id = target_frame_;
     noattitude_transform.transform.translation.x = transform_stamped.transform.translation.x;
     noattitude_transform.transform.translation.y = transform_stamped.transform.translation.y;
     noattitude_transform.transform.translation.z = transform_stamped.transform.translation.z;
@@ -186,7 +188,7 @@ void PointCloudToLaserScanNode::cloudCallback(
     noattitude_transform.transform.translation.x =0;
     noattitude_transform.transform.translation.y =0;
     noattitude_transform.transform.translation.z =0;
-    q_new.setRPY(-roll, -pitch, 0);
+    q_new.setRPY(roll, pitch, 0);
     noattitude_transform.transform.rotation = tf2::toMsg(q_new);
       
     pcl::PointCloud<pcl::PointXYZ> pcl_cloud, pcl_cloud_transformed;
@@ -200,7 +202,6 @@ void PointCloudToLaserScanNode::cloudCallback(
     }else{
     tf2_->transform(*cloud_msg, *cloud, target_frame_, tf2::durationFromSec(tolerance_));
     }
-    tf2_->transform(*cloud_msg, *cloud, target_frame_, tf2::durationFromSec(tolerance_));
 
     cloud_msg = cloud;
 

@@ -111,7 +111,7 @@
  
    // ROS Parameters
    int input_queue_size_;
-   std::string target_frame_;
+   std::string target_frame_, fixed_frame_, cloud_frame_;
    double tolerance_;
    double min_height_shortrange_, max_height_shortrange_, min_height_longrange_, max_height_longrange_, angle_min_, angle_max_, angle_increment_, scan_time_, range_min_,
    range_transition_, range_max_;
