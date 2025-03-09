@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 project(pointcloud_to_laserscan)
 
 find_package(ament_cmake_auto REQUIRED)
+find_package(pcl_ros REQUIRED)
+
 ament_auto_find_build_dependencies()
 
 ament_auto_add_library(laserscan_to_pointcloud SHARED
