@@ -188,13 +188,13 @@ void PointCloudToLaserScanNode::cloudCallback(
     noattitude_transform.transform.rotation = tf2::toMsg(q_new);
 
     tf_broadcaster_->sendTransform(noattitude_transform);
-    noattitude_transform.transform.translation.x =0;
-    noattitude_transform.transform.translation.y =0;
+    noattitude_transform.transform.translation.x =-transform_stamped.transform.translation.x;//changed, era 0
+    noattitude_transform.transform.translation.y =-transform_stamped.transform.translation.y;//changed
     noattitude_transform.transform.translation.z =0;
     q_new.setRPY(roll, pitch, 0);
     noattitude_transform.transform.rotation = tf2::toMsg(q_new);
       
-    pcl::PointCloud<pcl::PointXYZ> pcl_cloud, pcl_cloud_transformed;
+    pcl::PointCloud<pcl::PointXYZ> pcl_cloud, pcl_cloud_transformed, pcl_cloud_transformed2;
     pcl::fromROSMsg(*cloud_msg, pcl_cloud);
 
     pcl_ros::transformPointCloud(pcl_cloud, pcl_cloud_transformed, noattitude_transform);
@@ -209,9 +209,17 @@ void PointCloudToLaserScanNode::cloudCallback(
       pcl_cloud_transformed= vgicpRegistration_.getNewTransformedCloud();
     }
 
-
+    /*  //new
+    noattitude_transform.transform.translation.x =transform_stamped.transform.translation.x;//changed, era 0
+    noattitude_transform.transform.translation.y =transform_stamped.transform.translation.y;//changed
+    noattitude_transform.transform.translation.z =0;
+    q_new.setRPY(0, 0, 0);
+    noattitude_transform.transform.rotation = tf2::toMsg(q_new);
+    pcl_ros::transformPointCloud(pcl_cloud_transformed, pcl_cloud_transformed2, noattitude_transform);
+    */
+    //stop new
     auto cloud = std::make_shared<sensor_msgs::msg::PointCloud2>();
-    pcl::toROSMsg(pcl_cloud_transformed, *cloud);
+    pcl::toROSMsg(pcl_cloud_transformed, *cloud); //should be non2 version
     cloud_msg = cloud;
   
 

@@ -25,9 +25,11 @@ class vgicpRegistrationClass {
 private:
     geometry_msgs::msg::TransformStamped ICP_output_transform_;
     RegistrationPCL<pcl::PointXYZ, pcl::PointXYZ> reg_;
-    pcl::PointCloud<pcl::PointXYZ> last_cloud_, new_cloud_, new_cloud_transformed_;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr last_cloud_, new_cloud_, new_cloud_transformed_;
 
 public:
+    vgicpRegistrationClass();
+
     void setLastCloud(const pcl::PointCloud<pcl::PointXYZ>& last_cloud);
     void setNewCloud(const pcl::PointCloud<pcl::PointXYZ>& new_cloud);
     void swapNewLastCloud();
