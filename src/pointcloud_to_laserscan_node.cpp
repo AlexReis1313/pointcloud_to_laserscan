@@ -56,6 +56,7 @@
  #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
  #include "pcl_ros/transforms.hpp"
  #include <pcl_conversions/pcl_conversions.h>
+
  
 namespace pointcloud_to_laserscan
 {
@@ -89,6 +90,7 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
   pub_short_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scanner/scan/short", rclcpp::SensorDataQoS());
   pub_long_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scanner/scan/long", rclcpp::SensorDataQoS());
 
+  vgicpRegistrationClass vgicpRegistration_;
 
   using std::placeholders::_1;
   // if pointcloud target frame specified, we need to filter by transform availability
@@ -112,7 +114,9 @@ PointCloudToLaserScanNode::PointCloudToLaserScanNode(const rclcpp::NodeOptions &
 
   subscription_listener_thread_ = std::thread(
     std::bind(&PointCloudToLaserScanNode::subscriptionListenerThreadLoop, this));
-}
+
+
+  }
 
 PointCloudToLaserScanNode::~PointCloudToLaserScanNode()
 {
@@ -159,10 +163,9 @@ void PointCloudToLaserScanNode::cloudCallback(
   // Transform cloud if necessary
   //if (target_frame_ != cloud_msg->header.frame_id) {
   try {
-    bool a = true;
-    auto cloud = std::make_shared<sensor_msgs::msg::PointCloud2>();
+    
 
-    if (a){
+    
     geometry_msgs::msg::TransformStamped transform_stamped, noattitude_transform;
 
 
@@ -196,23 +199,29 @@ void PointCloudToLaserScanNode::cloudCallback(
 
     pcl_ros::transformPointCloud(pcl_cloud, pcl_cloud_transformed, noattitude_transform);
 
-
-    pcl::toROSMsg(pcl_cloud_transformed, *cloud);
-
-    }else{
-    tf2_->transform(*cloud_msg, *cloud, target_frame_, tf2::durationFromSec(tolerance_));
+     //ICP cloud
+    if (vgicpRegistration_.firstTime_){
+      vgicpRegistration_.setLastCloud(pcl_cloud_transformed);
+    } else{
+      vgicpRegistration_.swapNewLastCloud();
+      vgicpRegistration_.setNewCloud(pcl_cloud_transformed);
+      vgicpRegistration_.computeRegistration();
+      pcl_cloud_transformed= vgicpRegistration_.getNewTransformedCloud();
     }
 
+
+    auto cloud = std::make_shared<sensor_msgs::msg::PointCloud2>();
+    pcl::toROSMsg(pcl_cloud_transformed, *cloud);
     cloud_msg = cloud;
-
-
-
+  
 
   } catch (tf2::TransformException & ex) {
     RCLCPP_ERROR_STREAM(this->get_logger(), "Transform failure: " << ex.what());
     return;
   }
   //}
+
+ 
   auto short_scan_msg = PointCloudToLaserScanNode::computeLaserScan(
     cloud_msg, range_min_, range_transition_, min_height_shortrange_, max_height_shortrange_,
     angle_min_, angle_max_, angle_increment_, scan_time_, inf_epsilon_, use_inf_, target_frame_);
